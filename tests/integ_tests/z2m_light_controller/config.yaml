@@ -30,3 +30,7 @@ example_app:
       direction: down
       use_onoff: true
     arrow_right_hold: hold_colortemp_toggle
+    toggle_full_brightness_key: toggle_full_brightness
+    scene_recall_key:
+      action: scene_recall
+      scene: 5

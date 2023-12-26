@@ -91,6 +91,10 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
             Z2MLight.ON: self.on,
             Z2MLight.OFF: self.off,
             Z2MLight.TOGGLE: self.toggle,
+            Z2MLight.TOGGLE_FULL_BRIGHTNESS: (
+                self.toggle_full,
+                (Z2MLightController.ATTRIBUTE_BRIGHTNESS,),
+            ),
             Z2MLight.RELEASE: self.release,
             Z2MLight.ON_FULL_BRIGHTNESS: (
                 self.on_full,
@@ -198,6 +202,7 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
             Z2MLight.COLORTEMP_FROM_CONTROLLER: self.colortemp_from_controller,
             Z2MLight.BRIGHTNESS_FROM_CONTROLLER_LEVEL: self.brightness_from_controller_level,
             Z2MLight.BRIGHTNESS_FROM_CONTROLLER_ANGLE: self.brightness_from_controller_angle,
+            Z2MLight.SCENE_RECALL: self.scene_recall,
         }
 
     async def before_action(self, action: str, *args: Any, **kwargs: Any) -> bool:
@@ -240,12 +245,25 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
         attributes = attributes or {}
         await self._toggle(**attributes)
 
-    async def _set_value(self, attribute: str, fraction: float) -> None:
+    async def _toggle_full(self, attribute: str) -> None:
+        await self._set_value(attribute, 1, True)
+
+    @action
+    async def toggle_full(self, attribute: str) -> None:
+        await self._toggle_full(attribute)
+
+    async def _set_value(
+        self, attribute: str, fraction: float, toggle: bool = False
+    ) -> None:
         fraction = max(0, min(fraction, 1))
         min_ = self.MIN_MAX_ATTR[attribute].min
         max_ = self.MIN_MAX_ATTR[attribute].max
         value = (max_ - min_) * fraction + min_
-        await self._on(**{attribute: value})
+
+        if toggle:
+            await self._toggle(**{attribute: value})
+        else:
+            await self._on(**{attribute: value})
 
     @action
     async def set_value(self, attribute: str, fraction: float) -> None:
@@ -427,3 +445,7 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
             await self._hold(
                 self.ATTRIBUTE_BRIGHTNESS, direction, steps=steps, use_onoff=use_onoff
             )
+
+    @action
+    async def scene_recall(self, scene: int | str) -> None:
+        await self._mqtt_call({"scene_recall": int(scene)})
