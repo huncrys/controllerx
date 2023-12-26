@@ -80,6 +80,7 @@ class Z2MLight:
     ON = "on"
     OFF = "off"
     TOGGLE = "toggle"
+    TOGGLE_FULL_BRIGHTNESS = "toggle_full_brightness"
     RELEASE = "release"
     ON_FULL_BRIGHTNESS = "on_full_brightness"
     ON_FULL_COLOR_TEMP = "on_full_color_temp"
@@ -103,6 +104,7 @@ class Z2MLight:
     COLORTEMP_FROM_CONTROLLER = "colortemp_from_controller"
     BRIGHTNESS_FROM_CONTROLLER_LEVEL = "brightness_from_controller_level"
     BRIGHTNESS_FROM_CONTROLLER_ANGLE = "brightness_from_controller_angle"
+    SCENE_RECALL = "scene_recall"
 
 
 class MediaPlayer:
