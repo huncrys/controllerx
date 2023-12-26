@@ -193,6 +193,14 @@ class E1743Controller(LightController):
         }
 
 
+class E1743Z2MSwitchController(Z2MLightController):
+    def get_z2m_actions_mapping(self) -> DefaultActionsMapping:
+        return {
+            "on": Z2MLight.ON,
+            "off": Z2MLight.OFF,
+        }
+
+
 class E1743Z2MLightController(Z2MLightController):
     def get_z2m_actions_mapping(self) -> DefaultActionsMapping:
         return {
