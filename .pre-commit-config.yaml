@@ -40,7 +40,7 @@ repos:
     rev: v3.19.1
     hooks:
       - id: pyupgrade
-        args: [--py39-plus]
+        args: [--py310-plus]
   - repo: https://github.com/PyCQA/flake8
     rev: 7.2.0
     hooks:
@@ -49,6 +49,7 @@ repos:
     rev: v1.15.0
     hooks:
       - id: mypy
+        args: [--python-version=3.10]
         additional_dependencies:
           - types-PyYAML==6.0.12
           - types-mock==5.0.0
