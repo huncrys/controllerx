@@ -3,22 +3,10 @@ import re
 import time
 from ast import literal_eval
 from asyncio import CancelledError, Task
-from collections import defaultdict
+from collections import Counter, defaultdict
+from collections.abc import Awaitable, Callable
 from functools import wraps
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Counter,
-    DefaultDict,
-    Dict,
-    List,
-    Optional,
-    Set,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import Any, DefaultDict, Optional, TypeVar, overload
 
 import appdaemon.utils as utils
 import cx_version
@@ -79,17 +67,17 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
     This is the parent Controller, all controllers must extend from this class.
     """
 
-    args: Dict[str, Any]
+    args: dict[str, Any]
     integration: Integration
     actions_mapping: ActionsMapping
     action_handles: DefaultDict[ActionEvent, Optional["Task[None]"]]
-    action_delay_handles: Dict[ActionEvent, Optional[str]]
-    multiple_click_actions: Set[ActionEvent]
-    action_delay: Dict[ActionEvent, int]
-    action_delta: Dict[ActionEvent, int]
-    action_times: Dict[str, float]
-    previous_states: Dict[ActionEvent, Optional[str]]
-    multiple_click_action_times: Dict[str, float]
+    action_delay_handles: dict[ActionEvent, str | None]
+    multiple_click_actions: set[ActionEvent]
+    action_delay: dict[ActionEvent, int]
+    action_delta: dict[ActionEvent, int]
+    action_times: dict[str, float]
+    previous_states: dict[ActionEvent, str | None]
+    multiple_click_action_times: dict[str, float]
     click_counter: Counter[ActionEvent]
     multiple_click_action_delay_tasks: DefaultDict[ActionEvent, Optional["Task[None]"]]
     multiple_click_delay: int
@@ -99,14 +87,14 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         await self.init()
 
     async def init(self) -> None:
-        controllers_ids: List[str] = self.get_list(self.args["controller"])
+        controllers_ids: list[str] = self.get_list(self.args["controller"])
         self.integration = self.get_integration(self.args["integration"])
 
         if "mapping" in self.args and "merge_mapping" in self.args:
             raise ValueError("`mapping` and `merge_mapping` cannot be used together")
 
-        custom_mapping: Optional[CustomActionsMapping] = self.args.get("mapping", None)
-        merge_mapping: Optional[CustomActionsMapping] = self.args.get(
+        custom_mapping: CustomActionsMapping | None = self.args.get("mapping", None)
+        merge_mapping: CustomActionsMapping | None = self.args.get(
             "merge_mapping", None
         )
 
@@ -122,10 +110,10 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         # Filter actions with include and exclude
         if "actions" in self.args and "excluded_actions" in self.args:
             raise ValueError("`actions` and `excluded_actions` cannot be used together")
-        include: List[ActionEvent] = self.get_list(
+        include: list[ActionEvent] = self.get_list(
             self.args.get("actions", list(self.actions_mapping.keys()))
         )
-        exclude: List[ActionEvent] = self.get_list(
+        exclude: list[ActionEvent] = self.get_list(
             self.args.get("excluded_actions", [])
         )
         self.actions_mapping = self.filter_actions(
@@ -179,8 +167,8 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
     def filter_actions(
         self,
         actions_mapping: ActionsMapping,
-        include: Set[ActionEvent],
-        exclude: Set[ActionEvent],
+        include: set[ActionEvent],
+        exclude: set[ActionEvent],
     ) -> ActionsMapping:
         allowed_actions = include - exclude
         return {
@@ -190,7 +178,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         }
 
     @staticmethod
-    def get_option(value: str, options: List[str], ctx: Optional[str] = None) -> str:
+    def get_option(value: str, options: list[str], ctx: str | None = None) -> str:
         if value in options:
             return value
         else:
@@ -200,8 +188,8 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
             )
 
     def parse_integration(
-        self, integration: Union[str, Dict[str, Any], Any]
-    ) -> Dict[str, str]:
+        self, integration: str | dict[str, Any] | Any
+    ) -> dict[str, str]:
         if isinstance(integration, str):
             return {"name": integration}
         elif isinstance(integration, dict):
@@ -214,7 +202,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
                 f"Type {type(integration)} is not supported for `integration` attribute"
             )
 
-    def get_integration(self, integration: Union[str, Dict[str, Any]]) -> Integration:
+    def get_integration(self, integration: str | dict[str, Any]) -> Integration:
         parsed_integration = self.parse_integration(integration)
         kwargs = {k: v for k, v in parsed_integration.items() if k != "name"}
         integrations = integration_module.get_integrations(self, kwargs)
@@ -232,14 +220,12 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         return actions_mapping
 
     @overload
-    def get_list(self, entities: List[T]) -> List[T]:
-        pass
+    def get_list(self, entities: list[T]) -> list[T]: ...
 
     @overload
-    def get_list(self, entities: T) -> List[T]:
-        pass
+    def get_list(self, entities: T) -> list[T]: ...
 
-    def get_list(self, entities: Union[List[T], T]) -> List[T]:
+    def get_list(self, entities: list[T] | T) -> list[T]:
         if isinstance(entities, (list, tuple)):
             return list(entities)
         return [entities]
@@ -249,28 +235,26 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         self,
         actions_mapping: ActionsMapping,
         *,
-        custom: Optional[Union[T, Dict[ActionEvent, T]]],
+        custom: T | dict[ActionEvent, T] | None,
         default: None,
-    ) -> Dict[ActionEvent, Optional[T]]:
-        pass
+    ) -> dict[ActionEvent, T | None]: ...
 
     @overload
     def get_mapping_per_action(
         self,
         actions_mapping: ActionsMapping,
         *,
-        custom: Optional[Union[T, Dict[ActionEvent, T]]],
+        custom: T | dict[ActionEvent, T] | None,
         default: T,
-    ) -> Dict[ActionEvent, T]:
-        pass
+    ) -> dict[ActionEvent, T]: ...
 
     def get_mapping_per_action(
         self,
         actions_mapping: ActionsMapping,
         *,
-        custom: Optional[Union[T, Dict[ActionEvent, T]]],
-        default: Union[None, T],
-    ) -> Union[Dict[ActionEvent, Optional[T]], Dict[ActionEvent, T]]:
+        custom: T | dict[ActionEvent, T] | None,
+        default: None | T,
+    ) -> dict[ActionEvent, T | None] | dict[ActionEvent, T]:
         if custom is not None and not isinstance(custom, dict):
             default = custom
         mapping = {action: default for action in actions_mapping}
@@ -285,8 +269,8 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
             if action is not None
         }
 
-    def get_multiple_click_actions(self, mapping: ActionsMapping) -> Set[ActionEvent]:
-        to_return: Set[ActionEvent] = set()
+    def get_multiple_click_actions(self, mapping: ActionsMapping) -> set[ActionEvent]:
+        to_return: set[ActionEvent] = set()
         for key in mapping.keys():
             if not isinstance(key, str) or MULTIPLE_CLICK_TOKEN not in key:
                 continue
@@ -334,8 +318,8 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         else:
             return value
 
-    async def render_attributes(self, attributes: Dict[str, Any]) -> Dict[str, Any]:
-        new_attributes: Dict[str, Any] = {}
+    async def render_attributes(self, attributes: dict[str, Any]) -> dict[str, Any]:
+        new_attributes: dict[str, Any] = {}
         for key, value in attributes.items():
             new_value = await self.render_value(value)
             if isinstance(value, dict):
@@ -345,7 +329,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
 
     async def call_service(
         self, service: str, render_template: bool = True, **attributes: Any
-    ) -> Optional[Any]:
+    ) -> Any | None:
         service = service.replace(".", "/")
         to_log = ["\n", f"🤖 Service: \033[1m{service.replace('/', '.')}\033[0m"]
         if service != "template/render" and render_template:
@@ -360,12 +344,12 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
     @utils.sync_wrapper  # type: ignore[misc]
     async def get_state(
         self,
-        entity_id: Optional[str] = None,
-        attribute: Optional[str] = None,
+        entity_id: str | None = None,
+        attribute: str | None = None,
         default: Any = None,
         copy: bool = True,
         **kwargs: Any,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         rendered_entity_id = await self.render_value(entity_id)
         return await super().get_state(
             rendered_entity_id, attribute, default, copy, **kwargs
@@ -374,8 +358,8 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
     async def handle_action(
         self,
         action_key: str,
-        previous_state: Optional[str] = None,
-        extra: Optional[EventData] = None,
+        previous_state: str | None = None,
+        extra: EventData | None = None,
     ) -> None:
         if (
             action_key in self.actions_mapping
@@ -426,7 +410,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
                 ascii_encode=False,
             )
 
-    async def multiple_click_call_action(self, kwargs: Dict[str, Any]) -> None:
+    async def multiple_click_call_action(self, kwargs: dict[str, Any]) -> None:
         action_key: ActionEvent = kwargs["action_key"]
         extra: EventData = kwargs["extra"]
         click_count: int = kwargs["click_count"]
@@ -444,7 +428,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
             await self.call_action(action_key, extra=extra)
 
     async def call_action(
-        self, action_key: ActionEvent, extra: Optional[EventData] = None
+        self, action_key: ActionEvent, extra: EventData | None = None
     ) -> None:
         self.log(
             f"🎮 Button event triggered: `{action_key}`",
@@ -497,7 +481,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
             )
         return False
 
-    async def action_timer_callback(self, kwargs: Dict[str, Any]) -> None:
+    async def action_timer_callback(self, kwargs: dict[str, Any]) -> None:
         action_key: ActionEvent = kwargs["action_key"]
         extra: EventData = kwargs["extra"]
         self.action_delay_handles[action_key] = None
@@ -516,7 +500,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
             )
 
     async def call_action_types(
-        self, action_types: List[ActionType], extra: Optional[EventData] = None
+        self, action_types: list[ActionType], extra: EventData | None = None
     ) -> None:
         for action_type in action_types:
             self.log(
@@ -535,7 +519,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         """
         return True
 
-    def get_z2m_actions_mapping(self) -> Optional[DefaultActionsMapping]:
+    def get_z2m_actions_mapping(self) -> DefaultActionsMapping | None:
         """
         Controllers can implement this function. It should return a dict
         with the states that a controller can take and the functions as values.
@@ -543,7 +527,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         """
         return None
 
-    def get_deconz_actions_mapping(self) -> Optional[DefaultActionsMapping]:
+    def get_deconz_actions_mapping(self) -> DefaultActionsMapping | None:
         """
         Controllers can implement this function. It should return a dict
         with the event id that a controller can take and the functions as values.
@@ -551,7 +535,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         """
         return None
 
-    def get_zha_actions_mapping(self) -> Optional[DefaultActionsMapping]:
+    def get_zha_actions_mapping(self) -> DefaultActionsMapping | None:
         """
         Controllers can implement this function. It should return a dict
         with the command that a controller can take and the functions as values.
@@ -559,14 +543,14 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         """
         return None
 
-    def get_zha_action(self, data: EventData) -> Optional[str]:
+    def get_zha_action(self, data: EventData) -> str | None:
         """
         This method can be override for controllers that do not support
         the standard extraction of the actions on cx_core/integration/zha.py
         """
         return None
 
-    def get_lutron_caseta_actions_mapping(self) -> Optional[DefaultActionsMapping]:
+    def get_lutron_caseta_actions_mapping(self) -> DefaultActionsMapping | None:
         """
         Controllers can implement this function. It should return a dict
         with the command that a controller can take and the functions as values.
@@ -574,7 +558,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         """
         return None
 
-    def get_state_actions_mapping(self) -> Optional[DefaultActionsMapping]:
+    def get_state_actions_mapping(self) -> DefaultActionsMapping | None:
         """
         Controllers can implement this function. It should return a dict
         with the command that a controller can take and the functions as values.
@@ -582,7 +566,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         """
         return None
 
-    def get_homematic_actions_mapping(self) -> Optional[DefaultActionsMapping]:
+    def get_homematic_actions_mapping(self) -> DefaultActionsMapping | None:
         """
         Controllers can implement this function. It should return a dict
         with the command that a controller can take and the functions as values.
@@ -590,7 +574,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         """
         return None
 
-    def get_shelly_actions_mapping(self) -> Optional[DefaultActionsMapping]:
+    def get_shelly_actions_mapping(self) -> DefaultActionsMapping | None:
         """
         Controllers can implement this function. It should return a dict
         with the command that a controller can take and the functions as values.
@@ -598,7 +582,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         """
         return None
 
-    def get_shellyforhass_actions_mapping(self) -> Optional[DefaultActionsMapping]:
+    def get_shellyforhass_actions_mapping(self) -> DefaultActionsMapping | None:
         """
         Controllers can implement this function. It should return a dict
         with the command that a controller can take and the functions as values.
@@ -606,7 +590,7 @@ class Controller(Hass, Mqtt):  # type: ignore[misc]
         """
         return None
 
-    def get_tasmota_actions_mapping(self) -> Optional[DefaultActionsMapping]:
+    def get_tasmota_actions_mapping(self) -> DefaultActionsMapping | None:
         """
         Controllers can implement this function. It should return a dict
         with the command that a controller can take and the functions as values.
