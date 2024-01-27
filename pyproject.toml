@@ -14,7 +14,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 appdaemon = ">=4.4.1"
 
 [tool.poetry.group.dev.dependencies]
@@ -22,7 +22,7 @@ black = ">=22.12.0"
 commitizen = ">=2.29.3"
 flake8 = ">=5.0.4"
 isort = ">=5.11.4"
-mypy = ">=0.991"
+mypy = ">=1.13.0"
 pre-commit = ">=2.21.0"
 types-mock = ">=5.0.0.0"
 types-PyYAML = ">=6.0.12.2"
@@ -53,7 +53,7 @@ line-length = 88
 exclude = ".git,.hg,.mypy_cache,.tox,_build,buck-out,build,dist"
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.10"
 warn_unused_configs = true
 warn_return_any = false
 warn_unreachable = true
@@ -85,7 +85,4 @@ exclude_lines = [
 name = "cz_conventional_commits"
 version = "4.28.0"
 tag_format = "v$major.$minor.$patch$prerelease"
-version_files = [
-    "apps/controllerx/cx_version.py",
-    "pyproject.toml:version"
-]
+version_files = ["apps/controllerx/cx_version.py", "pyproject.toml:version"]
