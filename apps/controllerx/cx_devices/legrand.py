@@ -1,11 +1,11 @@
-from typing import Any, Dict
+from typing import Any
 
 from cx_const import DefaultActionsMapping, Light, Z2MLight
 from cx_core import LightController, Z2MLightController
 from cx_core.integration import EventData
 
 
-def get_zha_action_LegrandWallController(data: Dict[str, Any]) -> str:
+def get_zha_action_LegrandWallController(data: dict[str, Any]) -> str:
     endpoint_id = data.get("endpoint_id", 1)
     command: str = data["command"]
     action = command
@@ -157,24 +157,7 @@ class Legrand600088Z2MLightController(Z2MLightController):
             "brightness_move_down_right": Z2MLight.HOLD_BRIGHTNESS_DOWN,
             "brightness_stop_right": Z2MLight.RELEASE,
         }
-    
 
-class Legrand600088Z2MLightController(Z2MLightController):
-    def get_z2m_actions_mapping(self) -> DefaultActionsMapping:
-        return {
-            "toggle_left": Z2MLight.TOGGLE,
-            "on_left": Z2MLight.ON,
-            "off_left": Z2MLight.OFF,
-            "brightness_move_up_left": Z2MLight.HOLD_COLOR_TEMP_UP,
-            "brightness_move_down_left": Z2MLight.HOLD_COLOR_TEMP_DOWN,
-            "brightness_stop_left": Z2MLight.RELEASE,
-            "toggle_right": Z2MLight.TOGGLE_FULL_BRIGHTNESS,
-            "on_right": Z2MLight.ON_FULL_BRIGHTNESS,
-            "off_right": Z2MLight.ON_MIN_BRIGHTNESS,
-            "brightness_move_up_right": Z2MLight.HOLD_BRIGHTNESS_UP,
-            "brightness_move_down_right": Z2MLight.HOLD_BRIGHTNESS_DOWN,
-            "brightness_stop_right": Z2MLight.RELEASE,
-        }
 
 class Legrand600088LeftZ2MLightController(Z2MLightController):
     def get_z2m_actions_mapping(self) -> DefaultActionsMapping:
@@ -186,6 +169,7 @@ class Legrand600088LeftZ2MLightController(Z2MLightController):
             "brightness_move_down_left": Z2MLight.HOLD_BRIGHTNESS_DOWN,
             "brightness_stop_left": Z2MLight.RELEASE,
         }
+
 
 class Legrand600088RightZ2MLightController(Z2MLightController):
     def get_z2m_actions_mapping(self) -> DefaultActionsMapping:
