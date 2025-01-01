@@ -158,6 +158,7 @@ class Legrand600088Z2MLightController(Z2MLightController):
             "brightness_stop_right": Z2MLight.RELEASE,
         }
 
+
 class Legrand600088LeftZ2MLightController(Z2MLightController):
     def get_z2m_actions_mapping(self) -> DefaultActionsMapping:
         return {
@@ -168,6 +169,7 @@ class Legrand600088LeftZ2MLightController(Z2MLightController):
             "brightness_move_down_left": Z2MLight.HOLD_BRIGHTNESS_DOWN,
             "brightness_stop_left": Z2MLight.RELEASE,
         }
+
 
 class Legrand600088RightZ2MLightController(Z2MLightController):
     def get_z2m_actions_mapping(self) -> DefaultActionsMapping:
