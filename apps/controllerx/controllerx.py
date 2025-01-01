@@ -7,6 +7,7 @@ https://github.com/xaviml/controllerx
 from cx_core import (
     Controller,
     CoverController,
+    ESPHomeLightController,
     LightController,
     MediaPlayerController,
     SwitchController,
