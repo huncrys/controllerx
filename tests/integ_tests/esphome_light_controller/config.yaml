@@ -1,0 +1,10 @@
+example_app:
+  module: controllerx
+  class: ESPHomeLightController
+  controller: livingroom_controller
+  integration:
+    name: z2m
+    listen_to: mqtt
+  light: livingroom_lamp
+  mapping:
+    toggle: toggle
