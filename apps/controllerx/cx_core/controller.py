@@ -20,7 +20,6 @@ from cx_const import (
     DefaultActionsMapping,
     PredefinedActionsMapping,
 )
-
 from cx_core import integration as integration_module
 from cx_core.action_type import ActionsMapping, parse_actions
 from cx_core.action_type.base import ActionType

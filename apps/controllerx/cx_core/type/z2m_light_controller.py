@@ -1,7 +1,7 @@
 import json
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from functools import lru_cache
-from typing import Annotated, Any, Callable, Literal, Optional
+from typing import Annotated, Any, Literal
 
 from cx_const import PredefinedActionsMapping, StepperDir, Z2MLight
 from cx_core.controller import Controller, action
@@ -26,7 +26,7 @@ class Z2MLightEntity(Entity):
     def __init__(
         self,
         name: str,
-        entities: Optional[list[str]] = None,
+        entities: list[str] | None = None,
         mode: Mode = DEFAULT_MODE,
         topic_prefix: str = DEFAULT_TOPIC_PREFIX,
     ) -> None:
@@ -65,7 +65,7 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
     transition: float
     use_onoff: bool
 
-    hold_attribute: Optional[str]
+    hold_attribute: str | None
 
     _mqtt_fn: dict[Mode, Callable[[str, str], Awaitable[None]]]
 
@@ -226,7 +226,7 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
         await self._mqtt_call({"state": "ON", **attributes})
 
     @action
-    async def on(self, attributes: Optional[dict[str, float]] = None) -> None:
+    async def on(self, attributes: dict[str, float] | None = None) -> None:
         attributes = attributes or {}
         await self._on(**attributes)
 
@@ -241,7 +241,7 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
         await self._mqtt_call({"state": "TOGGLE", **attributes})
 
     @action
-    async def toggle(self, attributes: Optional[dict[str, float]] = None) -> None:
+    async def toggle(self, attributes: dict[str, float] | None = None) -> None:
         attributes = attributes or {}
         await self._toggle(**attributes)
 
@@ -252,7 +252,9 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
     async def toggle_full(self, attribute: str) -> None:
         await self._toggle_full(attribute)
 
-    async def _set_value(self, attribute: str, fraction: float, toggle: bool = False) -> None:
+    async def _set_value(
+        self, attribute: str, fraction: float, toggle: bool = False
+    ) -> None:
         fraction = max(0, min(fraction, 1))
         min_ = self.MIN_MAX_ATTR[attribute].min
         max_ = self.MIN_MAX_ATTR[attribute].max
@@ -292,7 +294,7 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
         attribute: str,
         direction: str,
         stepper: InvertStepper,
-        transition: Optional[float],
+        transition: float | None,
         use_onoff: bool,
         mode: str,
     ) -> None:
@@ -315,9 +317,9 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
         self,
         attribute: str,
         direction: str,
-        steps: Optional[float] = None,
-        transition: Optional[float] = None,
-        use_onoff: Optional[bool] = None,
+        steps: float | None = None,
+        transition: float | None = None,
+        use_onoff: bool | None = None,
     ) -> None:
         attribute = self.get_option(attribute, self.ATTRIBUTES_LIST, "`click` action")
         direction = self.get_option(
@@ -338,8 +340,8 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
         self,
         attribute: str,
         direction: str,
-        steps: Optional[float] = None,
-        use_onoff: Optional[bool] = None,
+        steps: float | None = None,
+        use_onoff: bool | None = None,
     ) -> None:
         attribute = self.get_option(attribute, self.ATTRIBUTES_LIST, "`hold` action")
         direction = self.get_option(
@@ -365,8 +367,8 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
         self,
         attribute: str,
         direction: str,
-        steps: Optional[float] = None,
-        use_onoff: Optional[bool] = None,
+        steps: float | None = None,
+        use_onoff: bool | None = None,
     ) -> None:
         await self._hold(attribute, direction, steps, use_onoff)
 
@@ -378,7 +380,7 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
         self.hold_attribute = None
 
     @action
-    async def xycolor_from_controller(self, extra: Optional[EventData] = None) -> None:
+    async def xycolor_from_controller(self, extra: EventData | None = None) -> None:
         if extra is None:
             self.log("No event data present", level="WARNING")
             return
@@ -392,9 +394,7 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
             await self._on(color={"x": xy_color["x"], "y": xy_color["y"]})
 
     @action
-    async def colortemp_from_controller(
-        self, extra: Optional[EventData] = None
-    ) -> None:
+    async def colortemp_from_controller(self, extra: EventData | None = None) -> None:
         if extra is None:
             self.log("No event data present", level="WARNING")
             return
@@ -409,7 +409,7 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
 
     @action
     async def brightness_from_controller_level(
-        self, extra: Optional[EventData] = None
+        self, extra: EventData | None = None
     ) -> None:
         if extra is None:
             self.log("No event data present", level="WARNING")
@@ -426,9 +426,9 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
     @action
     async def brightness_from_controller_angle(
         self,
-        steps: Optional[float] = None,
-        use_onoff: Optional[bool] = None,
-        extra: Optional[EventData] = None,
+        steps: float | None = None,
+        use_onoff: bool | None = None,
+        extra: EventData | None = None,
     ) -> None:
         if extra is None:
             self.log("No event data present", level="WARNING")
@@ -447,5 +447,5 @@ class Z2MLightController(TypeController[Z2MLightEntity]):
             )
 
     @action
-    async def scene_recall(self, scene: int|str) -> None:
+    async def scene_recall(self, scene: int | str) -> None:
         await self._mqtt_call({"scene_recall": int(scene)})

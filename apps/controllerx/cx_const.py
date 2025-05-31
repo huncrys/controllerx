@@ -1,19 +1,19 @@
-from collections.abc import Awaitable
-from typing import Any, Callable, Optional, Union
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 ActionFunction = Callable[..., Awaitable[Any]]
 ActionParams = tuple[Any, ...]
 ActionFunctionWithParams = tuple[ActionFunction, ActionParams]
-TypeAction = Union[ActionFunction, ActionFunctionWithParams]
-ActionEvent = Union[str, int]
+TypeAction = ActionFunction | ActionFunctionWithParams
+ActionEvent = str | int
 PredefinedActionsMapping = dict[str, TypeAction]
-DefaultActionsMapping = dict[ActionEvent, Optional[str]]
+DefaultActionsMapping = dict[ActionEvent, str | None]
 
-CustomAction = Union[str, dict[str, Any]]
-CustomActions = Union[list[CustomAction], CustomAction]
-CustomActionsMapping = dict[ActionEvent, Optional[CustomActions]]
+CustomAction = str | dict[str, Any]
+CustomActions = list[CustomAction] | CustomAction
+CustomActionsMapping = dict[ActionEvent, CustomActions | None]
 
-Number = Union[int, float]
+Number = int | float
 
 
 class Light:

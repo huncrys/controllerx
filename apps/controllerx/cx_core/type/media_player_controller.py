@@ -1,7 +1,6 @@
 from typing import Any
 
 from cx_const import MediaPlayer, Number, PredefinedActionsMapping, StepperDir
-
 from cx_core.controller import action
 from cx_core.feature_support.media_player import MediaPlayerSupport
 from cx_core.integration import EventData

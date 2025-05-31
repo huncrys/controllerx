@@ -3,7 +3,6 @@ from functools import lru_cache
 from typing import Any, Literal
 
 from cx_const import Light, Number, PredefinedActionsMapping, StepperDir, StepperMode
-
 from cx_core.color_helper import Color, get_color_wheel
 from cx_core.controller import action
 from cx_core.feature_support.light import LightSupport
